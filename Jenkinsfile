@@ -57,7 +57,15 @@ pipeline {
 
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: "--scan ./ --disableYarnAudit --disableNodeAudit --cveValidForHours 24 --nvdApiKey ${env.OWASP_NVD_API_KEY}", odcInstallation: 'DP-Check'
+                dependencyCheck additionalArguments: """
+                --scan ./ \
+                --disableYarnAudit \
+                --disableNodeAudit \
+                --cveValidForHours 24 \
+                --format XML \
+                --out dependency-check-report \
+                --nvdApiKey ${env.OWASP_NVD_API_KEY}
+                """, odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
             // Truncated NVD Data (for speed) : cveValidForHours 24 h, CVE which is updated 24 hours ago. So it will be faster
@@ -142,5 +150,5 @@ pipeline {
         }
     }
     // post stage ends
-    
+
 }
