@@ -1,5 +1,6 @@
 def dockerHubRepo = "sahal56/netflix" // Your Docker Hub repository
 def email = "sahalpathan5601@gmail.com" // Your E-mail
+def slackChannel = "#jenkins" // Your Slack Channel
 
 pipeline {
     agent any
@@ -12,10 +13,20 @@ pipeline {
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
         SECRETS_API_KEYS = credentials('jenkins/apiKeys') // Loads the entire JSON secret from AWS Secrets Manager
-        SLACK_CHANNEL = '#jenkins' // Your Slack Channel Name
     }
 
     stages {
+
+        stage('Prepare Workspace'){
+            steps {
+                cleanWs()
+                checkout scm
+
+                // If Jenkinsfile is stored in another repo
+                // [declare in global] def gitRepo = "https://github.com/<username>/<repo-name>.git"
+                // git branch: 'main', url: "${gitRepo}" 
+            }
+        }
 
         stage('Parsing API Keys'){
             steps{
@@ -24,23 +35,6 @@ pipeline {
                     env.TMDB_API_KEY = parsed.tmdbApiKey
                     env.OWASP_NVD_API_KEY = parsed.owaspNvdApiKey
                 }
-            }
-        }
-
-
-        stage('Clean Workspace'){
-            steps{
-                cleanWs()
-            }
-        }
-
-        stage('Checkout from Git'){
-            steps{
-                checkout scm
-
-                // If Jenkinsfile is stored in another repo
-                // [declare in global] def gitRepo = "https://github.com/<username>/<repo-name>.git"
-                // git branch: 'main', url: "${gitRepo}" 
             }
         }
 
@@ -145,8 +139,8 @@ pipeline {
             // Slack
             script {
                 // if env var of slack is not null and not empty, then proceed
-                if (env.SLACK_CHANNEL != null && !env.SLACK_CHANNEL.trim().isEmpty()) {
-                    slackSend channel: env.SLACK_CHANNEL, // Use the variable here
+                if (slackChannel != null && !slackChannel.trim().isEmpty()) {
+                    slackSend channel: slackChannel, // Use the variable here
                     message: "Find Status of Pipeline:- ${currentBuild.currentResult} ${env.JOB_NAME} #${env.BUILD_NUMBER} ${BUILD_URL}"
                 } else {
                     echo "Slack channel not defined or empty. Skipping Slack notification."
