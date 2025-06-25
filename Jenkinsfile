@@ -11,8 +11,6 @@ pipeline {
     }
 
     environment {
-        JAVA_HOME = tool name: 'jdk17'
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         SCANNER_HOME = tool 'sonar-scanner'
         TMDB_API_KEY = credentials('tmdbApiKey')
         OWASP_NVD_API_KEY = credentials('owaspNvdApiKey')
