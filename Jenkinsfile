@@ -11,6 +11,8 @@ pipeline {
     }
 
     environment {
+        JAVA_HOME = tool name: 'jdk17'
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         SCANNER_HOME = tool 'sonar-scanner'
         TMDB_API_KEY = credentials('tmdbApiKey')
         OWASP_NVD_API_KEY = credentials('owaspNvdApiKey')
@@ -29,8 +31,7 @@ pipeline {
             steps{
                 withSonarQubeEnv('sonar-server') {
                     sh '''
-                    export JAVA_HOME=${JAVA_HOME}
-                    export PATH=$JAVA_HOME/bin:$PATH
+                    java -version
                     $SCANNER_HOME/bin/sonar-scanner \
                     -Dsonar.projectName=Netflix \
                     -Dsonar.projectKey=Netflix
