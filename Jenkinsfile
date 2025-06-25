@@ -98,10 +98,8 @@ pipeline {
 
         stage('DEPLOY : Run the latest container on Jenkins EC2'){
             steps{
-                sh '''
-                docker rm -f netflix || true
-                docker run -d --name netflix -p 8081:80 ${dockerHubRepo}:latest
-                '''
+                sh "docker rm -f netflix || true"
+                sh "docker run -d --name netflix -p 8081:80 ${dockerHubRepo}:latest"
             }
         }
 
@@ -116,9 +114,9 @@ pipeline {
                 def fileReportExists = fileExists('trivy_file_scan.txt') && fileExists('trivy_image_scan.txt')
 
                 emailext (
-                    subject: "Pipeline ${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    subject: "${env.JOB_NAME}: ${buildStatus}",
                     body: """
-                    <p>This is a Jenkins NETFLIX CICD pipeline status.</p>
+                    <p>This is a Jenkins NETFLIX CI pipeline status.</p>
                     <p>Project: ${env.JOB_NAME}</p>
                     <p>Build Number: ${env.BUILD_NUMBER}</p>
                     <p>Build Status: ${buildStatus}</p>
@@ -136,7 +134,7 @@ pipeline {
                 // if env var of slack is not null and not empty, then proceed
                 if (slackChannel != null && !slackChannel.trim().isEmpty()) {
                     slackSend channel: slackChannel, // Use the variable here
-                    message: "Find Status of Pipeline:- ${currentBuild.currentResult} ${env.JOB_NAME} #${env.BUILD_NUMBER} ${BUILD_URL}"
+                    message: "${env.JOB_NAME} Status: ${currentBuild.currentResult} #${env.BUILD_NUMBER} ${BUILD_URL}"
                 } else {
                     echo "Slack channel not defined or empty. Skipping Slack notification."
                 }
