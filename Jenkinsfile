@@ -12,7 +12,8 @@ pipeline {
 
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
-        SECRETS_API_KEYS = credentials('jenkins/apiKeys') // Loads the entire JSON secret from AWS Secrets Manager
+        TMDB_API_KEY = credentials('tmdbApiKey')
+        OWASP_NVD_API_KEY = credentials('owaspNvdApiKey')
     }
 
     stages {
@@ -21,20 +22,6 @@ pipeline {
             steps {
                 cleanWs()
                 checkout scm
-
-                // If Jenkinsfile is stored in another repo
-                // [declare in global] def gitRepo = "https://github.com/<username>/<repo-name>.git"
-                // git branch: 'main', url: "${gitRepo}" 
-            }
-        }
-
-        stage('Parsing API Keys'){
-            steps{
-                script{
-                    def parsed = readJSON text: env.SECRETS_API_KEYS
-                    env.TMDB_API_KEY = parsed.tmdbApiKey
-                    env.OWASP_NVD_API_KEY = parsed.owaspNvdApiKey
-                }
             }
         }
 
@@ -119,7 +106,9 @@ pipeline {
             // Email
             script {
                 def buildStatus = currentBuild.currentResult
-                def buildUser = currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')[0]?.userId ?: 'Github User'
+                def buildUser = currentBuild.getBuildCauses('hudson.model.Cause$UserIdCause')[0]?.userId ?: 'Jenkins'
+                def fileReportExists = fileExists('trivy_file_scan.txt') && fileExists('trivy_image_scan.txt')
+
                 emailext (
                     subject: "Pipeline ${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: """
@@ -132,7 +121,7 @@ pipeline {
                     """,
                     to: "${email}",
                     mimeType: 'text/html',
-                    attachmentsPattern: 'trivy_file_scan.txt,trivy_image_scan.txt'
+                    attachmentsPattern: fileReportExists ? 'trivy_file_scan.txt,trivy_image_scan.txt' : ''
                 )
             }
 
