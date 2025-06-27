@@ -28,12 +28,7 @@ pipeline {
         stage("Sonarqube Analysis"){
             steps{
                 withSonarQubeEnv('sonar-server') {
-                    sh '''
-                    java -version
-                    $SCANNER_HOME/bin/sonar-scanner \
-                    -Dsonar.projectName=Netflix \
-                    -Dsonar.projectKey=Netflix
-                    '''
+                    sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Netflix -Dsonar.projectKey=Netflix"
                 }
             }
         }
@@ -42,7 +37,6 @@ pipeline {
            steps {
                 script {
                     timeout(time: 5, unit: 'MINUTES') {
-                        // Not stopping pipeline
                         waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
                     }
                 }
@@ -61,14 +55,10 @@ pipeline {
                 --scan ./ \
                 --disableYarnAudit \
                 --disableNodeAudit \
-                --cveValidForHours 24 \
-                --format XML \
-                --out dependency-check-report \
                 --nvdApiKey ${env.OWASP_NVD_API_KEY}
                 """, odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
-            // Truncated NVD Data (for speed) : cveValidForHours 24 h, CVE which is updated 24 hours ago. So it will be faster
         }
 
         stage('TRIVY FS SCAN') {
@@ -97,12 +87,12 @@ pipeline {
         }
 
         // Here New Job will take care of CD - ArgoCD will do Deployment
-        // stage('Trigger Update Manifest Job'){
-        //     steps{
-        //         echo "Triggering updatemanifestjob"
-        //         build job: 'updatemanifestjob', parameters: [string(name: 'DOCKERTAG', value: env.BUILD_NUMBER)]
-        //     }
-        // }
+        stage('Trigger Update Manifest Pipeline'){
+            steps{
+                echo "Triggering Update Manifest Pipeline"
+                build job: 'UpdateManifest-CD-Pipeline', parameters: [string(name: 'DOCKERTAG', value: env.BUILD_NUMBER)]
+            }
+        }
 
         stage('DEPLOY : Run the latest container on Jenkins EC2'){
             steps{
