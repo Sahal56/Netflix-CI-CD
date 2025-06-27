@@ -3,6 +3,7 @@ def email = "sahalpathan5601@gmail.com" // Your E-mail
 def slackChannel = "#jenkins" // Your Slack Channel
 
 pipeline {
+    
     agent any
 
     tools{
@@ -140,5 +141,5 @@ pipeline {
         }
     }
     // post stage ends
-    
+
 }
