@@ -3,7 +3,7 @@ def email = "sahalpathan5601@gmail.com" // Your E-mail
 def slackChannel = "#jenkins" // Your Slack Channel
 
 pipeline {
-    
+
     agent any
 
     tools{
@@ -50,15 +50,17 @@ pipeline {
             }
         }
 
+        // DP-Check version >= 9.0.0 requires --nvdCredentialsId ${env.OWASP_NVD_API_KEY} for fast scan
+        // we are using 6.5.1, so not required
         stage('OWASP FS SCAN') {
             steps {
                 dependencyCheck additionalArguments: """
-                --scan ./ \
-                --disableYarnAudit \
-                --disableNodeAudit \
-                --nvdApiKey ${env.OWASP_NVD_API_KEY}
+                --scan ./ --disableYarnAudit --disableNodeAudit \
                 """, odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                dependencyCheckPublisher(
+                    pattern: '**/dependency-check-report.xml',
+                    skipNoReportFiles: true,   // So build won't fail if no report is generated
+                )
             }
         }
 
